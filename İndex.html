@@ -1,1 +1,419 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>StreetPro AZ - Nizami Cəfərli Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            user-select: none;
+        }
 
+        /* Menyu Sistemi */
+        #menu-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+
+        .menu-box {
+            text-align: center;
+            background: rgba(255,255,255,0.05);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid #e74c3c;
+            min-width: 300px;
+            box-shadow: 0 0 30px rgba(231, 76, 60, 0.3);
+        }
+
+        h1 {
+            color: #e74c3c;
+            margin-bottom: 30px;
+            letter-spacing: 5px;
+            font-size: 2rem;
+        }
+
+        .menu-btn {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: transparent;
+            border: 1px solid #e74c3c;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        .menu-btn:hover {
+            background: #e74c3c;
+            transform: scale(1.05);
+        }
+
+        .sub-menu { display: none; }
+        .active { display: block; }
+
+        /* Oyun UI */
+        #game-ui {
+            display: none;
+            pointer-events: none;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hud-element {
+            pointer-events: auto;
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #e74c3c;
+            border-radius: 8px;
+        }
+
+        #minimap-container {
+            top: 15px;
+            right: 15px;
+            width: 120px;
+            height: 120px;
+        }
+
+        .plate-system {
+            top: 145px;
+            right: 15px;
+            background: white;
+            color: black;
+            padding: 2px 8px;
+            font-weight: bold;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .az-flag {
+            width: 12px;
+            height: 8px;
+            background: linear-gradient(#00bfff 33%, #ff0000 33% 66%, #008000 66%);
+        }
+
+        .speedo {
+            bottom: 110px;
+            right: 20px;
+            width: 90px;
+            height: 90px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid #e74c3c;
+        }
+
+        .mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #e74c3c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .gas-btn {
+            border-color: #2ecc71;
+            width: 75px;
+            height: 75px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menu-overlay">
+        <div id="main-menu" class="menu-box sub-menu active">
+            <h1>STREETPRO<br><small style="font-size: 0.8rem; color: #fff;">AZERBAIJAN EDITION</small></h1>
+            <button class="menu-btn" onclick="startGame()" id="txt-start">BAŞLA</button>
+            <button class="menu-btn" onclick="showSub('settings-menu')" id="txt-settings">AYARLAR</button>
+            <button class="menu-btn" onclick="showSub('about-menu')" id="txt-about">HAQQINDA</button>
+        </div>
+
+        <div id="settings-menu" class="menu-box sub-menu">
+            <h2 id="txt-lang-title">DİL SEÇİMİ</h2>
+            <button class="menu-btn" onclick="changeLang('az')">AZƏRBAYCAN</button>
+            <button class="menu-btn" onclick="changeLang('en')">ENGLISH</button>
+            <button class="menu-btn" style="border-color: #555;" onclick="showSub('main-menu')" id="txt-back1">GERİ</button>
+        </div>
+
+        <div id="about-menu" class="menu-box sub-menu">
+            <h2 id="txt-about-title">HAQQINDA</h2>
+            <p style="font-size: 1.2rem; line-height: 1.6;">Yaradan:<br><b style="color: #e74c3c;">Nizami Cəfərli</b></p>
+            <p style="font-size: 0.8rem; opacity: 0.6;">Versiya: 3.0 Pro</p>
+            <button class="menu-btn" onclick="showSub('main-menu')" id="txt-back2">GERİ</button>
+        </div>
+    </div>
+
+    <div id="game-ui">
+        <div id="minimap-container" class="hud-element"><canvas id="minimap-canvas"></canvas></div>
+        <div class="plate-system">
+            <div class="az-flag"></div>
+            <span id="p-txt">10-YP-001</span>
+            <span>AZ</span>
+        </div>
+        <div class="hud-element speedo">
+            <div style="font-size: 1.8rem; font-weight: bold; color: #e74c3c;" id="speed">0</div>
+            <div style="font-size: 0.6rem;">KM/H</div>
+        </div>
+
+        <div class="mobile-controls">
+            <div class="btn-group">
+                <div class="control-btn" id="btn-left">←</div>
+                <div class="control-btn" id="btn-right">→</div>
+            </div>
+            <div class="btn-group">
+                <div class="control-btn" id="btn-brake">BRK</div>
+                <div class="control-btn gas-btn" id="btn-gas">GAS</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dil Sistemi
+        const langData = {
+            az: {
+                start: "BAŞLA",
+                settings: "AYARLAR",
+                about: "HAQQINDA",
+                langT: "DİL SEÇİMİ",
+                back: "GERİ",
+                aboutT: "HAQQINDA"
+            },
+            en: {
+                start: "START",
+                settings: "SETTINGS",
+                about: "ABOUT",
+                langT: "LANGUAGE",
+                back: "BACK",
+                aboutT: "ABOUT"
+            }
+        };
+
+        function changeLang(lang) {
+            const d = langData[lang];
+            document.getElementById('txt-start').innerText = d.start;
+            document.getElementById('txt-settings').innerText = d.settings;
+            document.getElementById('txt-about').innerText = d.about;
+            document.getElementById('txt-lang-title').innerText = d.langT;
+            document.getElementById('txt-about-title').innerText = d.aboutT;
+            document.getElementById('txt-back1').innerText = d.back;
+            document.getElementById('txt-back2').innerText = d.back;
+        }
+
+        function showSub(id) {
+            document.querySelectorAll('.sub-menu').forEach(m => m.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        let gameStarted = false;
+        function startGame() {
+            document.getElementById('menu-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('menu-overlay').style.display = 'none';
+                document.getElementById('game-ui').style.display = 'block';
+                gameStarted = true;
+            }, 500);
+        }
+
+        // ────────────────────────────────────────────────
+        //                  THREE.JS OYUN
+        // ────────────────────────────────────────────────
+        let scene, camera, renderer, car, speed = 0;
+        let moveState = { forward: false, backward: false, left: false, right: false };
+        let mapCanvas, mapCtx;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050505);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Minimap
+            mapCanvas = document.getElementById('minimap-canvas');
+            mapCtx = mapCanvas.getContext('2d');
+            mapCanvas.width = 120;
+            mapCanvas.height = 120;
+
+            // Işıq
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(10, 20, 10);
+            scene.add(sun);
+
+            // Yol
+            const road = new THREE.Mesh(
+                new THREE.PlaneGeometry(50, 10000),
+                new THREE.MeshStandardMaterial({ color: 0x111111 })
+            );
+            road.rotation.x = -Math.PI / 2;
+            scene.add(road);
+
+            // ─── Maşın (daha yaxşı görünüş) ───
+            car = new THREE.Group();
+
+            // Təkərlər
+            const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.25, 16);
+            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+
+            [-0.9, 0.9].forEach(x => {
+                [-1.5, 1.5].forEach(z => {
+                    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+                    wheel.position.set(x, 0.4, z);
+                    wheel.rotation.z = Math.PI / 2;
+                    car.add(wheel);
+                });
+            });
+
+            // Kuzov
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(1.9, 1.0, 4.2),
+                new THREE.MeshStandardMaterial({ color: 0xff3333 })
+            );
+            body.position.y = 0.7;
+            car.add(body);
+
+            // Dam
+            const roof = new THREE.Mesh(
+                new THREE.BoxGeometry(1.7, 0.4, 3.0),
+                new THREE.MeshStandardMaterial({ color: 0x222222 })
+            );
+            roof.position.y = 1.4;
+            car.add(roof);
+
+            car.position.y = 0.4;
+            scene.add(car);
+
+            setupControls();
+            animate();
+        }
+
+        function setupControls() {
+            const bind = (id, prop) => {
+                const el = document.getElementById(id);
+                el.onpointerdown = e => { e.preventDefault(); moveState[prop] = true; };
+                el.onpointerup   = e => { e.preventDefault(); moveState[prop] = false; };
+            };
+            bind('btn-gas',    'forward');
+            bind('btn-brake',  'backward');
+            bind('btn-left',   'left');
+            bind('btn-right',  'right');
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (gameStarted) {
+                // Sürət
+                if (moveState.forward)  speed += 0.006;
+                if (moveState.backward) speed -= 0.004;
+                speed *= 0.975;
+
+                // Dönmə (ön təkər hissi + az drift)
+                const maxSteer = 0.055;
+                let steer = 0;
+                if (moveState.left)  steer =  maxSteer;
+                if (moveState.right) steer = -maxSteer;
+
+                if (Math.abs(speed) > 0.015) {
+                    car.rotation.y += steer * (speed > 0 ? 1 : -1) * Math.min(1.4, Math.abs(speed) * 10);
+                }
+
+                // Hərəkət + az yan sürüşmə
+                const drift = 0.35 * Math.abs(speed);
+                car.position.z -= Math.cos(car.rotation.y) * speed;
+                car.position.x -= Math.sin(car.rotation.y) * speed;
+                car.position.x -= Math.sin(car.rotation.y + Math.PI/2) * drift;
+
+                // Kamera
+                const offset = 7 + Math.abs(speed) * 0.4;
+                camera.position.set(
+                    car.position.x + Math.sin(car.rotation.y) * offset,
+                    3.5 + Math.abs(speed) * 0.2,
+                    car.position.z + Math.cos(car.rotation.y) * offset
+                );
+                camera.lookAt(car.position);
+
+                // UI
+                document.getElementById('speed').innerText = Math.abs(Math.round(speed * 700));
+
+                // Minimap
+                mapCtx.clearRect(0, 0, 120, 120);
+                mapCtx.save();
+                mapCtx.translate(60, 60);
+                mapCtx.rotate(-car.rotation.y + Math.PI);
+                mapCtx.fillStyle = "#e74c3c";
+                mapCtx.beginPath();
+                mapCtx.moveTo(0, -8);
+                mapCtx.lineTo(5, 6);
+                mapCtx.lineTo(-5, 6);
+                mapCtx.closePath();
+                mapCtx.fill();
+                mapCtx.restore();
+            } else {
+                // Menyu animasiyası
+                car.rotation.y += 0.008;
+                camera.position.set(8, 4, 8);
+                camera.lookAt(car.position);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Başlat
+        init();
+    </script>
+</body>
+  </html>
